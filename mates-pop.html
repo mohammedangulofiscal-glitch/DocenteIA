@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Quiz de matemáticas para secundaria con problemas de cultura pop.">
+<meta property="og:title" content="Mates Pop! 🎮">
+<meta property="og:description" content="Problemas de álgebra, fracciones, probabilidad y estadística para secundaria, en modo videojuego.">
+<title>Mates Pop! · Secundaria</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: rgba(30, 41, 59, .72);
+    --slate-700: #334155;
+    --slate-600: #475569;
+    --slate-400: #94a3b8;
+    --cyan: #22d3ee;
+    --purple: #a855f7;
+    --green: #4ade80;
+    --red: #f87171;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #fff;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+    background-attachment: fixed;
+    touch-action: manipulation;
+  }
+  .app {
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: calc(var(--safe-t) + 16px) calc(var(--safe-r) + 14px) calc(var(--safe-b) + 18px) calc(var(--safe-l) + 14px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  h1 {
+    margin: 0;
+    font-size: clamp(1.7rem, 8vw, 2.4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 10px rgba(56, 189, 248, .45));
+  }
+  h1 .pad { -webkit-text-fill-color: initial; color: #fff; filter: none; }
+  .level { margin: 2px 0 0; color: var(--slate-400); font-size: .8rem; }
+  .hud {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    border-radius: 14px;
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, .1);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  .hud div { text-align: center; }
+  .hud small { display: block; color: var(--slate-400); font-size: .65rem; }
+  .hud strong { display: block; font-size: 1.35rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .hud .sep { width: 1px; height: 30px; background: var(--slate-600); }
+  #score { color: var(--green); }
+  .qnum { color: var(--cyan); }
+
+  .progress { height: 8px; border-radius: 99px; background: #1e293b; overflow: hidden; }
+  .progress i {
+    display: block;
+    height: 100%;
+    width: 20%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #06b6d4, var(--purple));
+    transition: width .5s ease;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    border-radius: 24px;
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, .1);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, .4);
+    overflow: hidden;
+  }
+  .stage.enter { animation: slideIn .45s cubic-bezier(.4, 0, .2, 1); }
+  @keyframes slideIn { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .blob { position: absolute; width: 130px; height: 130px; border-radius: 50%; filter: blur(48px); opacity: .25; pointer-events: none; }
+  .blob.p { top: -40px; right: -40px; background: var(--purple); }
+  .blob.c { bottom: -40px; left: -40px; background: #06b6d4; }
+
+  .badge {
+    position: relative;
+    align-self: flex-start;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 600;
+    color: hsl(var(--h), 90%, 78%);
+    background: hsla(var(--h), 80%, 45%, .3);
+    border: 1px solid hsla(var(--h), 80%, 60%, .5);
+  }
+  .q-row { position: relative; display: flex; gap: 14px; align-items: flex-start; margin: 14px 0 18px; }
+  .q-emoji { flex: none; font-size: clamp(3rem, 15vw, 5rem); line-height: 1; filter: drop-shadow(0 0 14px rgba(255, 255, 255, .2)); }
+  .q-text { margin: 0; font-size: clamp(1.02rem, 4.4vw, 1.4rem); font-weight: 600; line-height: 1.5; color: #f1f5f9; }
+
+  /* Resaltados dentro de las preguntas */
+  .eq {
+    display: block;
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, .55);
+    color: var(--cyan);
+    font-size: 1.35em;
+    font-weight: 800;
+    text-align: center;
+  }
+  .hl-cyan { color: var(--cyan); font-weight: 800; }
+  .hl-green { color: var(--green); font-weight: 800; font-size: 1.2em; }
+  .hl-red { color: var(--red); font-weight: 800; }
+  .hl-blue { color: #60a5fa; font-weight: 800; }
+  .u-red { text-decoration: underline; text-decoration-color: #ef4444; text-decoration-thickness: 3px; text-underline-offset: 3px; }
+
+  .options {
+    position: relative;
+    margin-top: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .opt {
+    min-height: 68px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(100, 116, 139, .35);
+    background: var(--slate-700);
+    color: #fff;
+    font: 600 1.05rem/1.2 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: transform .15s, background-color .2s, border-color .2s;
+  }
+  .opt:active:not(:disabled) { transform: scale(.97); }
+  .opt:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+  .opt.right { background: #16a34a; border-color: var(--green); }
+  .opt.wrong { background: #dc2626; border-color: var(--red); }
+  .opt.reveal { background: rgba(22, 163, 74, .45); border-color: var(--green); }
+  .opt:disabled { cursor: default; }
+  @media (hover: hover) {
+    .opt:hover:not(:disabled) { background: var(--slate-600); transform: translateY(-2px); }
+  }
+
+  /* Hoja de feedback */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(15, 23, 42, .8);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  .overlay.open { display: flex; }
+  .sheet {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    padding: 52px 20px calc(var(--safe-b) + 20px);
+    border-radius: 28px 28px 0 0;
+    background: #1e293b;
+    border: 1px solid var(--slate-600);
+    border-bottom: 0;
+    text-align: center;
+    animation: up .3s cubic-bezier(.2, .9, .3, 1);
+  }
+  @keyframes up { from { transform: translateY(100%); } to { transform: none; } }
+  @media (min-width: 640px) {
+    .overlay { align-items: center; padding: 20px; }
+    .sheet { border-radius: 28px; border-bottom: 1px solid var(--slate-600); padding-bottom: 24px; animation-name: pop; }
+    @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  }
+  .fb-icon {
+    position: absolute;
+    top: -38px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    border: 4px solid #1e293b;
+  }
+  .fb-icon.ok { background: #22c55e; box-shadow: 0 0 22px rgba(74, 222, 128, .55); }
+  .fb-icon.ko { background: #ef4444; box-shadow: 0 0 22px rgba(248, 113, 113, .55); }
+  .fb-title { margin: 0 0 12px; font-size: 1.8rem; font-weight: 800; }
+  .fb-title.ok { color: var(--green); }
+  .fb-title.ko { color: var(--red); }
+  .fb-text { margin: 0 0 18px; padding: 14px; border-radius: 14px; background: rgba(15, 23, 42, .55); color: #cbd5e1; line-height: 1.6; }
+  .btn-main {
+    width: 100%;
+    min-height: 54px;
+    border: 0;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #06b6d4, #2563eb);
+    color: #fff;
+    font: 800 1.05rem 'Poppins', sans-serif;
+    cursor: pointer;
+  }
+  .btn-main.pink { background: linear-gradient(90deg, var(--purple), #ec4899); box-shadow: 0 0 18px rgba(236, 72, 153, .45); }
+  .btn-main:active { transform: scale(.98); }
+  .btn-main:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+  .end { margin: auto 0; text-align: center; padding: 20px 0; }
+  .end .trophy { font-size: 5.5rem; }
+  .end h2 { margin: 8px 0; color: var(--cyan); font-size: 1.9rem; }
+  .end p { margin: 0 0 24px; color: #cbd5e1; font-size: 1.1rem; }
+  .end p strong { color: var(--green); font-size: 1.5rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stage.enter, .sheet { animation: none; }
+    .progress i { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>Mates Pop! <span class="pad">🎮</span></h1>
+      <p class="level">Nivel: Secundaria</p>
+    </div>
+    <div class="hud" aria-live="polite">
+      <div><small>Puntos</small><strong id="score">0</strong></div>
+      <span class="sep"></span>
+      <div><small>Pregunta</small><strong class="qnum"><span id="current-q">1</span>/<span id="total-q">5</span></strong></div>
+    </div>
+  </header>
+
+  <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+
+  <main class="stage enter" id="stage">
+    <span class="blob p"></span><span class="blob c"></span>
+    <div id="play">
+      <span class="badge" id="badge">Álgebra</span>
+      <div class="q-row">
+        <div class="q-emoji" id="emoji" aria-hidden="true">🐉</div>
+        <h2 class="q-text" id="question">Cargando pregunta…</h2>
+      </div>
+    </div>
+    <div class="options" id="options"></div>
+  </main>
+</div>
+
+<div class="overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+  <div class="sheet" id="sheet">
+    <div class="fb-icon" id="fb-icon"></div>
+    <h3 class="fb-title" id="fb-title"></h3>
+    <p class="fb-text" id="fb-text"></p>
+    <button class="btn-main" id="next-btn">Siguiente nivel 🚀</button>
+  </div>
+</div>
+
+<script>
+  const questions = [
+    {
+      topic: 'Álgebra', emoji: '🐉', hue: 270,
+      question: 'Goku necesita elevar su ki a 9000 para vencer a Freezer. Si su ki actual se calcula con la ecuación <span class="eq">3x + 1500 = 9000</span> ¿cuál debe ser el valor de "x"?',
+      options: ['1500', '2000', '2500', '3000'],
+      correct: 2,
+      explanation: 'Primero restas 1500 de ambos lados (9000 − 1500 = 7500). Luego divides 7500 entre 3. El resultado es x = 2500. ¡Fase Dios alcanzada! 💥'
+    },
+    {
+      topic: 'Aritmética / Fracciones', emoji: '🎸', hue: 142,
+      question: 'Peso Pluma tiene una gira de 20 conciertos en total. Si ya cantó <span class="hl-green">3/4</span> de su gira, ¿cuántos conciertos le <strong class="u-red">faltan</strong> por dar?',
+      options: ['5 conciertos', '10 conciertos', '15 conciertos', '3 conciertos'],
+      correct: 0,
+      explanation: 'Para saber cuánto es 3/4 de 20, divides 20 entre 4 (da 5) y multiplicas por 3 (da 15). ¡Ojo! Esos son los que YA dio. Como son 20 en total, 20 − 15 = 5 conciertos le faltan. ¡Pura Doble P! 🕷️'
+    },
+    {
+      topic: 'Probabilidad', emoji: '🛹', hue: 45,
+      question: 'Bart Simpson tiene en su mochila 12 globos de agua: <span class="hl-red">4 rojos</span>, <span class="hl-blue">5 azules</span> y <span class="hl-green">3 verdes</span>. Si saca uno sin mirar para mojar a Skinner, ¿cuál es la probabilidad de que sea verde?',
+      options: ['1/3', '1/4', '1/2', '3/10'],
+      correct: 1,
+      explanation: 'Hay 3 globos verdes de un total de 12. La fracción es 3/12. Si simplificas dividiendo ambos números entre 3, te da 1/4 (o 25%). ¡Ay caramba! 💦'
+    },
+    {
+      topic: 'Estadística', emoji: '💰', hue: 190,
+      question: 'En un reto, MrBeast regaló autos durante 5 días. Las cantidades fueron: 2, 5, 2, 8 y 10 autos. ¿Cuál es la <span class="hl-cyan">mediana</span> de autos regalados?',
+      options: ['2', '5', '5.4', '8'],
+      correct: 1,
+      explanation: 'Para sacar la mediana (el número del medio), es OBLIGATORIO ordenarlos de menor a mayor: 2, 2, 5, 8, 10. El que queda exactamente al centro es el 5. ¡Suscríbete! 🚗'
+    },
+    {
+      topic: 'Probabilidad', emoji: '🐰', hue: 330,
+      question: 'Bad Bunny tiene 10 accesorios: 5 lentes, 3 gorros y 2 cadenas. Si elige uno al azar, ¿qué porcentaje de probabilidad hay de que <span class="hl-red">NO</span> sea un gorro?',
+      options: ['30%', '50%', '70%', '80%'],
+      correct: 2,
+      explanation: 'Hay 10 accesorios en total. Si 3 son gorros, entonces 7 NO lo son (5 lentes + 2 cadenas). 7 de 10 equivale a 7/10, que es el 70%. ¡Tití me preguntó! 🕶️'
+    }
+  ];
+
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), play = $('play'), badge = $('badge'), emojiEl = $('emoji'), qEl = $('question');
+  const optionsEl = $('options'), scoreEl = $('score'), curEl = $('current-q'), bar = $('bar');
+  const modal = $('modal'), sheet = $('sheet'), fbIcon = $('fb-icon'), fbTitle = $('fb-title'), fbText = $('fb-text'), nextBtn = $('next-btn');
+
+  let idx = 0, score = 0, hits = 0;
+
+  function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+
+  function replay(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+  function load() {
+    const q = questions[idx];
+    replay(stage, 'enter');
+    play.hidden = false;
+    curEl.textContent = idx + 1;
+    bar.style.width = ((idx + 1) / questions.length * 100) + '%';
+    badge.textContent = q.topic;
+    badge.style.setProperty('--h', q.hue);
+    emojiEl.textContent = q.emoji;
+    qEl.innerHTML = q.question;
+
+    optionsEl.innerHTML = '';
+    optionsEl.style.display = '';
+    q.options.forEach((text, i) => {
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = text;
+      b.addEventListener('click', () => answer(i, b));
+      optionsEl.appendChild(b);
+    });
+    stage.scrollIntoView({ block: 'nearest' });
+  }
+
+  function answer(i, btn) {
+    const q = questions[idx];
+    const ok = i === q.correct;
+    const all = optionsEl.querySelectorAll('button');
+    all.forEach(b => b.disabled = true);
+    if (ok) {
+      btn.classList.add('right');
+      score += 100; hits++;
+      scoreEl.textContent = score;
+      buzz([30, 40, 30]);
+    } else {
+      btn.classList.add('wrong');
+      all[q.correct].classList.add('reveal');
+      buzz(120);
+    }
+    setTimeout(() => feedback(ok, q.explanation), 600);
+  }
+
+  function feedback(ok, text) {
+    fbIcon.textContent = ok ? '🎉' : '💀';
+    fbIcon.className = 'fb-icon ' + (ok ? 'ok' : 'ko');
+    fbTitle.textContent = ok ? '¡Brutal! Correcto' : '¡F! Incorrecto';
+    fbTitle.className = 'fb-title ' + (ok ? 'ok' : 'ko');
+    fbText.textContent = text;
+    nextBtn.textContent = idx === questions.length - 1 ? 'Ver puntuación final 🏆' : 'Siguiente nivel 🚀';
+    modal.classList.add('open');
+    replay(sheet, 'sheet');
+    nextBtn.focus({ preventScroll: true });
+  }
+
+  function finish() {
+    play.hidden = true;
+    optionsEl.style.display = 'block';
+    optionsEl.innerHTML =
+      '<div class="end">' +
+        '<div class="trophy">🏆</div>' +
+        '<h2>¡Juego terminado!</h2>' +
+        '<p>Acertaste ' + hits + ' de ' + questions.length + '<br>Puntuación final: <strong>' + score + '</strong> pts</p>' +
+        '<button class="btn-main pink" id="again">Jugar de nuevo 🔄</button>' +
+      '</div>';
+    $('again').addEventListener('click', () => {
+      idx = 0; score = 0; hits = 0;
+      scoreEl.textContent = '0';
+      load();
+    });
+    buzz([60, 60, 60, 60, 150]);
+  }
+
+  nextBtn.addEventListener('click', () => {
+    modal.classList.remove('open');
+    idx++;
+    if (idx < questions.length) load(); else finish();
+  });
+
+  $('total-q').textContent = questions.length;
+  load();
+</script>
+</body>
+</html>

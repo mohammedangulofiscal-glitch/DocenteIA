@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="description" content="Cuatro juegos educativos para usar en clase desde el celular: primaria, secundaria, preparatoria y universidad.">
+<meta property="og:title" content="Juegos para el aula">
+<meta property="og:description" content="Memorama, quiz, ruleta de debate y caso práctico. Listos para usar desde el celular.">
+<title>Juegos para el aula</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎒</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Oswald:wght@700&family=Playfair+Display:wght@700&family=Poppins:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #111827;
+    color: #f9fafb;
+  }
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: calc(var(--safe-t) + 28px) calc(var(--safe-r) + 16px) calc(var(--safe-b) + 28px) calc(var(--safe-l) + 16px);
+  }
+  h1 { margin: 0; font-size: clamp(2rem, 9vw, 2.6rem); line-height: 1.1; }
+  .intro { margin: 8px 0 24px; color: #9ca3af; line-height: 1.5; }
+  .list { display: grid; gap: 14px; }
+
+  .tile {
+    position: relative;
+    display: block;
+    min-height: 132px;
+    padding: 18px 18px 16px;
+    border-radius: 20px;
+    text-decoration: none;
+    overflow: hidden;
+    transition: transform .15s;
+  }
+  .tile:active { transform: scale(.98); }
+  .tile:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .tile .lvl { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 700; }
+  .tile h2 { margin: 10px 0 4px; padding-right: 8px; font-weight: 400; line-height: 1.05; }
+  .tile p { margin: 0; max-width: min(32ch, calc(100% - 62px)); font-size: .9rem; line-height: 1.45; }
+  .tile .art { position: absolute; right: 14px; bottom: 10px; font-size: 3.4rem; line-height: 1; }
+
+  /* Cada mosaico usa la piel de su propio juego */
+  .memo {
+    background-color: #fef08a;
+    background-image: radial-gradient(#fde047 2px, transparent 2px);
+    background-size: 22px 22px;
+    color: #1f2937;
+    border: 3px solid #000;
+    box-shadow: 5px 5px 0 #000;
+  }
+  .memo .lvl { background: #fff; border: 2px solid #000; }
+  .memo h2 {
+    font-family: 'Bangers', Impact, sans-serif;
+    font-size: 2.1rem;
+    letter-spacing: 1.5px;
+    color: #fff;
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  }
+
+  .pop {
+    background: #0f172a radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 60%), radial-gradient(at 30% 0%, hsla(225, 39%, 30%, 1) 0, transparent 60%);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, .12);
+  }
+  .pop .lvl { background: rgba(168, 85, 247, .3); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, .5); }
+  .pop h2 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 1.9rem;
+    background: linear-gradient(90deg, #22d3ee, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .debate {
+    background: #09090b linear-gradient(to right, rgba(220, 38, 38, .18), transparent 50%, rgba(37, 99, 235, .18));
+    color: #a1a1aa;
+    border: 1px solid #27272a;
+  }
+  .debate .lvl { background: #eab308; color: #000; }
+  .debate h2 {
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 700;
+    font-size: 2rem;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #ef4444, #f4f4f5, #3b82f6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .caso {
+    background-color: #f8fafc;
+    background-image: linear-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 100% 1.6rem;
+    color: #475569;
+    padding-left: 38px;
+  }
+  .caso::before { content: ''; position: absolute; top: 0; bottom: 0; left: 22px; width: 2px; background: #ef4444; opacity: .35; }
+  .caso .lvl { background: #1e293b; color: #60a5fa; }
+  .caso h2 { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1.65rem; color: #1e293b; }
+
+  footer { margin-top: 28px; color: #6b7280; font-size: .8rem; text-align: center; }
+  @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Juegos para el aula</h1>
+  <p class="intro">Cuatro dinámicas listas para proyectar o jugar desde el celular. Elige el nivel y empieza.</p>
+
+  <nav class="list">
+    <a class="tile memo" href="memorama-revolucion.html">
+      <span class="lvl">Primaria</span>
+      <h2>¡Memoria Revolucionaria!</h2>
+      <p>Memorama de la Revolución Mexicana con un dato curioso en cada par.</p>
+      <span class="art" aria-hidden="true">🤠</span>
+    </a>
+
+    <a class="tile pop" href="mates-pop.html">
+      <span class="lvl">Secundaria</span>
+      <h2>Mates Pop!</h2>
+      <p>Álgebra, fracciones, probabilidad y estadística con problemas de cultura pop.</p>
+      <span class="art" aria-hidden="true">🎮</span>
+    </a>
+
+    <a class="tile debate" href="simulador-debate.html">
+      <span class="lvl">Preparatoria</span>
+      <h2>Arena de Tensión</h2>
+      <p>Ruleta de temas polémicos, turnos por equipo y cronómetro de intervención.</p>
+      <span class="art" aria-hidden="true">⚖️</span>
+    </a>
+
+    <a class="tile caso" href="deconstructor-casos.html">
+      <span class="lvl">Universidad</span>
+      <h2>Expediente Ónice</h2>
+      <p>Caso de auditoría forense: acierta y avanzas, falla y la fiscalía te regresa.</p>
+      <span class="art" aria-hidden="true">🗂️</span>
+    </a>
+  </nav>
+
+  <footer>Funciona en cualquier navegador. Sin instalar nada.</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#09090b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Ruleta de temas y cronómetro para debates en preparatoria.">
+<meta property="og:title" content="Arena de Tensión · Simulador de debates">
+<meta property="og:description" content="Gira la ruleta, asigna equipos y controla el tiempo del debate desde el celular.">
+<title>Arena de Tensión · Simulador de debates</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #09090b;
+    --panel: #18181b;
+    --panel-2: #27272a;
+    --line: #3f3f46;
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --gold: #eab308;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --green: #16a34a;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text);
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(to right, rgba(220, 38, 38, .07) 0%, transparent 50%, rgba(37, 99, 235, .07) 100%),
+      linear-gradient(to bottom, rgba(255, 255, 255, .02) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 4px;
+    background-attachment: fixed;
+    touch-action: manipulation;
+  }
+  .app {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: calc(var(--safe-t) + 18px) calc(var(--safe-r) + 14px) calc(var(--safe-b) + 24px) calc(var(--safe-l) + 14px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  header { text-align: center; }
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(39, 39, 42, .6);
+    color: #d4d4d8;
+    font-size: .8rem;
+    font-weight: 600;
+  }
+  h1 {
+    margin: 10px 0 0;
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.4rem, 12vw, 4rem);
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: -.5px;
+    background: linear-gradient(90deg, var(--red), var(--text), var(--blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-2);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, .45);
+  }
+  .panel-head h2 { margin: 0; font-size: 1.1rem; }
+  .panel-head p { margin: 2px 0 0; color: var(--muted); font-size: .85rem; }
+
+  /* Ruleta */
+  .roulette {
+    position: relative;
+    height: 132px;
+    margin: 14px 0;
+    overflow: hidden;
+    background: var(--panel);
+    border: 2px solid var(--panel-2);
+    border-radius: 14px;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, .8);
+  }
+  .roulette::before, .roulette::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 14%;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .roulette::before { left: 0; background: linear-gradient(90deg, var(--panel), transparent); }
+  .roulette::after { right: 0; background: linear-gradient(-90deg, var(--panel), transparent); }
+  .track { display: flex; height: 100%; will-change: transform; }
+  .topic-card {
+    flex: none;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    text-align: center;
+    font-weight: 600;
+    font-size: .92rem;
+    line-height: 1.3;
+    border-right: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+    opacity: .5;
+    transition: opacity .3s, color .3s;
+  }
+  .topic-card.dim { opacity: .2; }
+  .topic-card.win { opacity: 1; color: var(--gold); }
+  .selector {
+    position: absolute;
+    top: 0; bottom: 0; left: 50%;
+    width: 4px;
+    transform: translateX(-50%);
+    background: var(--gold);
+    box-shadow: 0 0 15px var(--gold);
+    z-index: 10;
+  }
+  .selector::before, .selector::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+  }
+  .selector::before { top: 0; border-top: 14px solid var(--gold); }
+  .selector::after { bottom: 0; border-bottom: 14px solid var(--gold); }
+
+  .btn {
+    min-height: 52px;
+    border: 0;
+    border-radius: 12px;
+    font: 700 1rem/1 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform .1s, background-color .2s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn-spin {
+    width: 100%;
+    background: var(--gold);
+    color: #000;
+    letter-spacing: .5px;
+    box-shadow: 0 0 18px rgba(234, 179, 8, .3);
+  }
+
+  .chosen {
+    margin-top: 14px;
+    padding: 18px 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(39, 39, 42, .85);
+    text-align: center;
+    display: none;
+    opacity: 0;
+    transform: scale(.96);
+    transition: opacity .4s, transform .4s;
+  }
+  .chosen.show { display: block; }
+  .chosen.visible { opacity: 1; transform: none; }
+  .chosen span { display: block; color: var(--gold); font-size: .8rem; font-weight: 700; margin-bottom: 6px; }
+  .chosen h3 { margin: 0; font-size: clamp(1.25rem, 5.6vw, 1.9rem); line-height: 1.25; }
+
+  /* Cronómetro */
+  .clock { text-align: center; }
+  .clock-label { color: var(--muted); font-size: .85rem; font-weight: 600; }
+  .timer {
+    margin: 4px 0 12px;
+    font-family: 'Oswald', Impact, sans-serif;
+    font-weight: 700;
+    font-size: clamp(4.5rem, 26vw, 7rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 2px;
+    border-radius: 14px;
+  }
+  .timer.warn { color: var(--red); animation: pulse 1s infinite; }
+  .timer.done { color: var(--red); }
+  @keyframes pulse {
+    0%, 100% { text-shadow: 0 0 12px rgba(220, 38, 38, .5); }
+    50% { text-shadow: 0 0 30px rgba(220, 38, 38, .9); }
+  }
+  .presets { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
+  .chip {
+    min-width: 56px;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: 600 .9rem 'Inter', sans-serif;
+    cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--text); color: #000; border-color: var(--text); }
+  .controls { display: grid; grid-template-columns: 1fr 60px; gap: 10px; }
+  .btn-play { background: var(--green); color: #fff; font-size: 1.1rem; }
+  .btn-play.running { background: #52525b; }
+  .btn-reset { background: #3f3f46; color: #fff; font-size: 1.3rem; }
+
+  /* Equipos */
+  .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .team {
+    position: relative;
+    min-height: 130px;
+    padding: 30px 10px 14px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    font: inherit;
+    color: var(--text);
+    transition: box-shadow .25s, transform .15s, border-color .25s;
+  }
+  .team:active { transform: scale(.98); }
+  .team:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .team.a { background: rgba(23, 37, 84, .45); border: 2px solid #1e3a8a; }
+  .team.b { background: rgba(69, 10, 10, .45); border: 2px solid #7f1d1d; }
+  .team .dot { font-size: 1.8rem; }
+  .team .name { font-weight: 700; font-size: .85rem; }
+  .team.a .name { color: #60a5fa; }
+  .team.b .name { color: #f87171; }
+  .team .side { font-weight: 900; font-size: 1.25rem; }
+  .team .turn {
+    position: absolute;
+    top: 8px; left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: .7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #fff;
+    color: #000;
+    display: none;
+  }
+  .team.active .turn { display: block; }
+  .team.a.active { border-color: var(--blue); box-shadow: 0 0 24px rgba(59, 130, 246, .55); }
+  .team.b.active { border-color: var(--red); box-shadow: 0 0 24px rgba(239, 68, 68, .55); }
+  .hint { margin: 10px 0 0; text-align: center; color: var(--muted); font-size: .8rem; }
+
+  .arena { display: flex; flex-direction: column; gap: 14px; }
+  @media (min-width: 760px) {
+    .arena { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 14px; align-items: stretch; }
+    .arena .teams { display: contents; }
+    .arena .team.a { order: 1; }
+    .arena .clock { order: 2; }
+    .arena .team.b { order: 3; }
+    .roulette { height: 120px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .timer.warn { animation: none; }
+    .chosen { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="kicker">⚖️ Simulador de debates · Prepa</span>
+    <h1>Arena de Tensión</h1>
+  </header>
+
+  <section class="panel" aria-labelledby="t-sorteo">
+    <div class="panel-head">
+      <h2 id="t-sorteo">1. Sorteo de tema</h2>
+      <p>Temas de actualidad, cultura y sociedad.</p>
+    </div>
+    <div class="roulette" id="roulette">
+      <div class="selector"></div>
+      <div class="track" id="track"></div>
+    </div>
+    <button class="btn btn-spin" id="spin-btn">Girar ruleta 🎲</button>
+    <div class="chosen" id="chosen" aria-live="polite">
+      <span>Tema a debatir</span>
+      <h3 id="chosen-text"></h3>
+    </div>
+  </section>
+
+  <section class="arena" aria-labelledby="t-tiempo">
+    <div class="panel clock">
+      <h2 id="t-tiempo" class="clock-label">2. Tiempo de intervención</h2>
+      <div class="timer" id="timer" role="timer" aria-live="off">03:00</div>
+      <div class="presets" role="group" aria-label="Duración del turno">
+        <button class="chip" data-min="1" aria-pressed="false">1 min</button>
+        <button class="chip" data-min="2" aria-pressed="false">2 min</button>
+        <button class="chip" data-min="3" aria-pressed="true">3 min</button>
+        <button class="chip" data-min="5" aria-pressed="false">5 min</button>
+      </div>
+      <div class="controls">
+        <button class="btn btn-play" id="play-btn">▶ Iniciar</button>
+        <button class="btn btn-reset" id="reset-btn" aria-label="Reiniciar tiempo">🔄</button>
+      </div>
+    </div>
+
+    <div class="teams">
+      <button class="team a" data-team="a" aria-pressed="false">
+        <span class="turn">Tiene la palabra</span>
+        <span class="dot">🔵</span>
+        <span class="name">Equipo A</span>
+        <span class="side">A FAVOR</span>
+      </button>
+      <button class="team b" data-team="b" aria-pressed="false">
+        <span class="turn">Tiene la palabra</span>
+        <span class="dot">🔴</span>
+        <span class="name">Equipo B</span>
+        <span class="side">EN CONTRA</span>
+      </button>
+    </div>
+  </section>
+  <p class="hint">Toca un equipo para darle la palabra: el reloj se reinicia para su turno.</p>
+</div>
+
+<script>
+  const topics = [
+    "¿Deberían prohibirse los corridos tumbados que hacen apología a la narcocultura?",
+    "¿El gobierno debería obligar al cierre total de industrias contaminantes por el cambio climático?",
+    "¿Usar ChatGPT para hacer tareas escolares debe ser considerado fraude y castigarse?",
+    "¿Debería prohibirse el uso de TikTok en menores de 16 años por salud mental?",
+    "¿La cancelación en redes sociales (Cancel Culture) es justicia social o ciberacoso?",
+    "¿Las calificaciones con números en la preparatoria destruyen la creatividad?",
+    "¿El servicio militar o servicio social debería ser 100% obligatorio para todos los jóvenes?",
+    "¿Los influencers y creadores de contenido deberían pagar impuestos especiales?",
+    "¿Es justificable destruir obras de arte en museos para protestar por la crisis climática?"
+  ];
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const SPIN_MS = reduceMotion ? 1200 : 5000;
+
+  function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+
+  /* ---------- Ruleta ---------- */
+  const roulette = document.getElementById('roulette');
+  const track = document.getElementById('track');
+  const spinBtn = document.getElementById('spin-btn');
+  const chosen = document.getElementById('chosen');
+  const chosenText = document.getElementById('chosen-text');
+
+  let cardW = 0;
+  let currentIdx = 2;
+  let spinning = false;
+  let lastTopic = null;
+
+  function shuffled(a) { return [...a].sort(() => Math.random() - .5); }
+
+  function buildTrack() {
+    let items = [];
+    for (let i = 0; i < 6; i++) items = items.concat(shuffled(topics));
+    track.innerHTML = '';
+    items.forEach(t => {
+      const d = document.createElement('div');
+      d.className = 'topic-card';
+      d.textContent = t;
+      track.appendChild(d);
+    });
+    sizeCards();
+  }
+
+  function sizeCards() {
+    const w = roulette.clientWidth;
+    cardW = Math.round(Math.min(w * 0.7, 320));
+    track.querySelectorAll('.topic-card').forEach(c => { c.style.width = cardW + 'px'; });
+  }
+
+  function offsetFor(i) { return i * cardW - roulette.clientWidth / 2 + cardW / 2; }
+
+  function moveTo(i, ms) {
+    track.style.transition = ms ? 'transform ' + ms + 'ms cubic-bezier(.15,.85,.15,1)' : 'none';
+    track.style.transform = 'translateX(' + (-offsetFor(i)) + 'px)';
+  }
+
+  function spin() {
+    if (spinning) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    spinBtn.textContent = 'Girando…';
+    chosen.classList.remove('visible');
+    setTimeout(() => chosen.classList.remove('show'), 300);
+
+    buildTrack();
+    currentIdx = 2;
+    moveTo(currentIdx, 0);
+    void track.offsetWidth;
+
+    const cards = track.querySelectorAll('.topic-card');
+    let stop = Math.floor(Math.random() * 15) + 30;
+    if (cards[stop].textContent === lastTopic) stop++;
+
+    requestAnimationFrame(() => {
+      moveTo(stop, SPIN_MS);
+      buzz(10);
+    });
+
+    setTimeout(() => {
+      currentIdx = stop;
+      cards.forEach(c => c.classList.add('dim'));
+      cards[stop].classList.remove('dim');
+      cards[stop].classList.add('win');
+      lastTopic = cards[stop].textContent;
+      chosenText.textContent = lastTopic;
+      chosen.classList.add('show');
+      requestAnimationFrame(() => requestAnimationFrame(() => chosen.classList.add('visible')));
+      buzz([40, 50, 80]);
+      spinning = false;
+      spinBtn.disabled = false;
+      spinBtn.textContent = 'Girar otra vez 🎲';
+      setTimeout(() => chosen.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' }), 150);
+    }, SPIN_MS + 60);
+  }
+
+  spinBtn.addEventListener('click', spin);
+  window.addEventListener('resize', () => {
+    if (spinning) return;
+    sizeCards();
+    moveTo(currentIdx, 0);
+  });
+
+  /* ---------- Cronómetro ---------- */
+  const timerEl = document.getElementById('timer');
+  const playBtn = document.getElementById('play-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const chips = document.querySelectorAll('.chip');
+  const teams = document.querySelectorAll('.team');
+
+  let duration = 180;
+  let remaining = 180 * 1000;
+  let endsAt = 0;
+  let tickId = null;
+  let audioCtx = null;
+
+  function render() {
+    const s = Math.ceil(remaining / 1000);
+    timerEl.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    timerEl.classList.toggle('warn', s <= 30 && s > 0);
+    timerEl.classList.toggle('done', s === 0);
+  }
+
+  function beep() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      [0, .35, .7].forEach(t => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.frequency.value = 880;
+        g.gain.setValueAtTime(.0001, audioCtx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(.3, audioCtx.currentTime + t + .02);
+        g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime + t + .25);
+        o.connect(g).connect(audioCtx.destination);
+        o.start(audioCtx.currentTime + t);
+        o.stop(audioCtx.currentTime + t + .3);
+      });
+    } catch (e) {}
+  }
+
+  function tick() {
+    remaining = Math.max(0, endsAt - Date.now());
+    render();
+    if (remaining === 0) {
+      pause();
+      beep();
+      buzz([200, 100, 200, 100, 400]);
+    }
+  }
+
+  function start() {
+    if (tickId || remaining === 0) return;
+    // Desbloquea el audio en iOS con el gesto del usuario
+    try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {}
+    endsAt = Date.now() + remaining;
+    tickId = setInterval(tick, 200);
+    playBtn.textContent = '⏸ Pausar';
+    playBtn.classList.add('running');
+  }
+
+  function pause() {
+    clearInterval(tickId);
+    tickId = null;
+    playBtn.textContent = remaining === 0 ? '▶ Iniciar' : '▶ Reanudar';
+    playBtn.classList.remove('running');
+  }
+
+  function reset() {
+    pause();
+    remaining = duration * 1000;
+    playBtn.textContent = '▶ Iniciar';
+    render();
+  }
+
+  playBtn.addEventListener('click', () => { tickId ? pause() : start(); });
+  resetBtn.addEventListener('click', reset);
+
+  chips.forEach(chip => chip.addEventListener('click', () => {
+    chips.forEach(c => c.setAttribute('aria-pressed', 'false'));
+    chip.setAttribute('aria-pressed', 'true');
+    duration = Number(chip.dataset.min) * 60;
+    reset();
+  }));
+
+  teams.forEach(team => team.addEventListener('click', () => {
+    teams.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-pressed', 'false'); });
+    team.classList.add('active');
+    team.setAttribute('aria-pressed', 'true');
+    buzz(15);
+    reset();
+  }));
+
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && tickId) tick(); });
+
+  buildTrack();
+  moveTo(currentIdx, 0);
+  render();
+</script>
+</body>
+</html>

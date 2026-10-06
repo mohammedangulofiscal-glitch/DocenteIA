@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Caso práctico de auditoría forense para universidad con mecánica de serpientes y escaleras.">
+<meta property="og:title" content="Expediente Ónice · Auditoría forense">
+<meta property="og:description" content="Deconstruye un caso de fraude corporativo paso a paso: acierta y avanzas, falla y retrocedes.">
+<title>Expediente Ónice · Deconstructor de casos</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗂️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --line: #334155;
+    --muted: #94a3b8;
+    --text: #e2e8f0;
+    --paper: #f8fafc;
+    --ink: #0f172a;
+    --blue: #3b82f6;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #eab308;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text);
+    background-color: var(--bg);
+    background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 70%);
+    touch-action: manipulation;
+  }
+  .serif { font-family: 'Playfair Display', Georgia, serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .app {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: calc(var(--safe-t) + 16px) calc(var(--safe-r) + 14px) calc(var(--safe-b) + 24px) calc(var(--safe-l) + 14px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  header { display: flex; flex-direction: column; gap: 10px; }
+  .level {
+    align-self: flex-start;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: #60a5fa;
+    font-size: .75rem;
+    font-weight: 700;
+  }
+  h1 { margin: 0; font-size: clamp(1.6rem, 7.4vw, 2.2rem); line-height: 1.15; }
+  .lead { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+  .status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+  .status small { color: var(--muted); font-size: .75rem; }
+  .status strong { font-size: 1rem; }
+
+  /* Ruta de evidencia (horizontal en móvil) */
+  .route {
+    position: relative;
+    padding: 14px 10px 12px;
+    border-radius: 16px;
+    background: rgba(30, 41, 59, .55);
+    border: 1px solid var(--line);
+  }
+  .route h2 { margin: 0 0 12px; font-size: .8rem; color: #cbd5e1; text-align: center; }
+  .nodes { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .rail, .rail-fill {
+    position: absolute;
+    top: 15px;
+    height: 3px;
+    border-radius: 3px;
+    left: 12.5%;
+  }
+  .rail { right: 12.5%; background: var(--line); }
+  .rail-fill { width: 0; max-width: 75%; background: var(--blue); transition: width .5s ease; }
+  .node { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .85rem;
+    border: 2px solid var(--line);
+    background: var(--panel);
+    color: #64748b;
+    transition: all .3s ease;
+  }
+  .node.past .dot { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .node.now .dot { border-color: var(--blue); color: #60a5fa; box-shadow: 0 0 14px var(--blue); transform: scale(1.1); }
+  .node span { font-size: .72rem; font-weight: 700; color: #64748b; }
+  .node.past span { color: #cbd5e1; }
+  .node.now span { color: #60a5fa; }
+
+  /* Documento */
+  .paper {
+    position: relative;
+    padding: 20px 16px 18px 40px;
+    border-radius: 14px;
+    background-color: var(--paper);
+    color: #334155;
+    background-image: linear-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 100% 1.85rem;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, .35), inset 0 0 20px rgba(0, 0, 0, .05);
+    overflow: hidden;
+    scroll-margin-top: calc(var(--safe-t) + 12px);
+  }
+  .paper::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 24px;
+    width: 2px;
+    background: #ef4444;
+    opacity: .3;
+  }
+  .paper.enter { animation: slideUp .45s ease-out; }
+  .paper.shake { animation: shake .5s ease-in-out; }
+  @keyframes slideUp { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+  }
+  .doc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #cbd5e1;
+  }
+  .doc-head h2 { margin: 0; color: #1e293b; font-size: clamp(1.25rem, 5.6vw, 1.6rem); line-height: 1.2; }
+  .doc-head p { margin: 4px 0 0; color: #64748b; font-size: .72rem; line-height: 1.4; }
+  .tag { flex: none; padding: 6px 8px; border-radius: 6px; background: #e2e8f0; color: #475569; font-size: .68rem; font-weight: 700; }
+  .doc-body { font-size: 1.04rem; line-height: 1.85rem; }
+  .doc-body p { margin: 0 0 .6rem; }
+  .doc-body ul, .doc-body ol { margin: .4rem 0 .9rem; padding-left: 1.3rem; }
+  .doc-body li { margin-bottom: .3rem; }
+  .doc-body ol { font-weight: 700; }
+  .ledger {
+    margin: .9rem 0;
+    padding: .5rem .8rem;
+    border-left: 4px solid #1e293b;
+    background: #e2e8f0;
+    font-size: .85rem;
+    line-height: 1.6;
+  }
+  .flag {
+    margin: 1rem 0;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.15rem;
+    line-height: 1.5;
+    text-decoration: underline;
+    text-decoration-color: #ef4444;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 4px;
+  }
+  .win-title { margin: 0 0 .8rem; color: #15803d; font-size: 1.5rem; }
+
+  .deduce { margin-top: 16px; padding: 14px; border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; }
+  .deduce h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; color: #1e293b; font-size: .82rem; }
+  .deduce h3 svg { width: 20px; height: 20px; color: #2563eb; flex: none; }
+  .deduce .ask { margin: 0 0 12px; color: #1e293b; font-weight: 600; line-height: 1.45; }
+  .opts { display: grid; gap: 10px; }
+  .opt {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    width: 100%;
+    min-height: 56px;
+    padding: 12px 14px;
+    text-align: left;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    font: 500 .98rem/1.45 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform .1s, background-color .2s;
+  }
+  .opt b { color: #94a3b8; }
+  .opt:active:not(:disabled) { transform: scale(.98); }
+  .opt:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  .opt.ok { background: #dcfce7; border-color: #22c55e; color: #166534; }
+  .opt.ko { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+  .opt:disabled { cursor: default; }
+  @media (hover: hover) { .opt:hover:not(:disabled) { background: #f8fafc; } }
+
+  .btn {
+    width: 100%;
+    min-height: 54px;
+    border: 0;
+    border-radius: 12px;
+    background: #2563eb;
+    color: #fff;
+    font: 700 1rem 'Inter', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, .3);
+  }
+  .btn:active { transform: scale(.98); }
+  .btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .restart { margin-top: 16px; }
+
+  /* Sello */
+  .stamp {
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    z-index: 60;
+    padding: .3rem 1.2rem;
+    border: 4px solid;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: clamp(1.8rem, 10vw, 3rem);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-15deg) scale(2);
+    transition: all .3s cubic-bezier(.175, .885, .32, 1.275);
+    background: rgba(248, 250, 252, .85);
+  }
+  .stamp.show { opacity: .95; transform: translate(-50%, -50%) rotate(-15deg) scale(1); }
+  .stamp.ok { color: var(--green); border-color: var(--green); }
+  .stamp.ko { color: var(--red); border-color: var(--red); }
+
+  /* Hoja de resultado */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(15, 23, 42, .88);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  .overlay.open { display: flex; }
+  .sheet {
+    width: 100%;
+    max-width: 520px;
+    padding: 26px 20px calc(var(--safe-b) + 20px);
+    border-radius: 24px 24px 0 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    text-align: center;
+    animation: up .3s cubic-bezier(.2, .9, .3, 1);
+  }
+  @keyframes up { from { transform: translateY(100%); } to { transform: none; } }
+  .fb-icon { font-size: 3.6rem; line-height: 1; margin-bottom: 10px; }
+  .fb-icon.ok { animation: bounce 1s infinite; filter: drop-shadow(0 0 14px rgba(74, 222, 128, .5)); }
+  .fb-icon.ko { filter: drop-shadow(0 0 14px rgba(248, 113, 113, .5)); }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  .fb-title { margin: 0 0 8px; font-size: 1.6rem; }
+  .fb-title.ok { color: #4ade80; }
+  .fb-title.ko { color: #f87171; }
+  .fb-text { margin: 0 0 20px; color: #cbd5e1; line-height: 1.55; }
+
+  /* Escritorio: ruta vertical a la izquierda */
+  @media (min-width: 900px) {
+    header { flex-direction: row; justify-content: space-between; align-items: flex-end; }
+    .status { flex-direction: column; min-width: 200px; gap: 2px; }
+    .main { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: start; }
+    .route { padding: 22px; position: sticky; top: 20px; }
+    .route h2 { text-align: left; margin-bottom: 22px; }
+    .nodes { grid-template-columns: 1fr; gap: 30px; }
+    .node { flex-direction: row; gap: 14px; }
+    .node span { font-size: .9rem; }
+    .rail, .rail-fill { top: 15px; left: 15px; width: 3px; height: auto; right: auto; max-width: none; }
+    .rail { bottom: 15px; }
+    .rail-fill { width: 3px; height: 0; transition: height .5s ease; }
+    .paper { padding: 32px 32px 28px 64px; }
+    .paper::before { left: 32px; }
+    .overlay { align-items: center; padding: 20px; }
+    .sheet { border-radius: 24px; border-bottom: 1px solid var(--line); padding-bottom: 26px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .paper.enter, .paper.shake, .sheet, .fb-icon.ok { animation: none; }
+    .stamp, .rail-fill, .dot { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span class="level">Nivel universidad</span>
+      <h1 class="serif">Expediente Ónice: Auditoría forense</h1>
+      <p class="lead">Deconstruye el caso. Acierta para avanzar rápido (🪜); falla y la fiscalía te hará retroceder (🐍).</p>
+    </div>
+    <div class="status">
+      <small>Estatus del caso</small>
+      <strong id="status">Fase de instrucción</strong>
+    </div>
+  </header>
+
+  <div class="main">
+    <nav class="route" aria-label="Ruta de evidencia">
+      <h2>Ruta de evidencia</h2>
+      <div class="nodes" id="nodes">
+        <div class="rail"></div>
+        <div class="rail-fill" id="rail-fill"></div>
+      </div>
+    </nav>
+
+    <article class="paper enter" id="paper" aria-live="polite">
+      <div class="doc-head">
+        <div>
+          <h2 class="serif" id="ev-title"></h2>
+          <p class="mono" id="ev-sub"></p>
+        </div>
+        <span class="tag">Evidencia <span id="ev-num">01</span></span>
+      </div>
+      <div class="doc-body serif" id="ev-body"></div>
+
+      <section class="deduce" id="deduce">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Deducción del auditor / fiscal
+        </h3>
+        <p class="ask" id="ask"></p>
+        <div class="opts" id="opts"></div>
+      </section>
+
+      <button class="btn restart" id="restart" hidden>Abrir un nuevo expediente 🔄</button>
+    </article>
+  </div>
+</div>
+
+<div class="stamp" id="stamp" aria-hidden="true">DENEGADO</div>
+
+<div class="overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+  <div class="sheet" id="sheet">
+    <div class="fb-icon" id="fb-icon">🪜</div>
+    <h3 class="fb-title" id="fb-title"></h3>
+    <p class="fb-text" id="fb-text"></p>
+    <button class="btn" id="next-btn">Continuar investigación ➔</button>
+  </div>
+</div>
+
+<script>
+  const caseData = [
+    {
+      id: 1,
+      title: 'Anexo A: Dispersión de nómina',
+      subtitle: 'Ref: NOM-10-2023 | Dpto. Contabilidad',
+      content: `<p>Se revisa la sábana de nómina de octubre. Observas a 3 ejecutivos:</p>
+        <ul>
+          <li>Director A: Sueldo $50,000. RFC: VACA75... Retención ISR: 30%</li>
+          <li>Gerente B: Sueldo $30,000. RFC: ROPM80... Retención ISR: 20%</li>
+          <li><strong>Consultor X: Sueldo $120,000. RFC: XAXX010101000. Retención ISR: 0%</strong></li>
+        </ul>
+        <p>El Consultor X recibe transferencias quincenales constantes pero no tiene retenciones registradas.</p>`,
+      question: '¿Cuál es la anomalía contable/legal principal en este documento?',
+      options: [
+        { text: 'El Director A gana muy poco para su puesto.', correct: false, reason: 'Error estratégico. Los montos de mercado no son un delito en sí mismos. Pierdes tiempo.' },
+        { text: 'El Consultor X usa un RFC genérico, gana desproporcionadamente y evade ISR.', correct: true, reason: '¡Exacto! Típico esquema de "empleado fantasma" o evasión. Tienes un hilo de donde tirar.' },
+        { text: 'Faltan las firmas autógrafas en el reporte impreso.', correct: false, reason: 'Objeción denegada. Los reportes digitales son válidos en esta etapa procesal.' }
+      ],
+      nodeLabel: 'Nómina'
+    },
+    {
+      id: 2,
+      title: 'Anexo B: Acta constitutiva',
+      subtitle: 'Ref: Folio Mercantil 998231 | Reg. Público',
+      content: `<p>Siguiendo la pista del "Consultor X", solicitas el acta de la empresa subcontratada a la que se le deposita su sueldo: "Consultoría Alfa S.A."</p>
+        <p>Al revisar los socios fundadores en el Registro Público de la Propiedad y el Comercio, encuentras:</p>
+        <div class="ledger mono">Socio A: Juan Pérez López (90% acciones)<br>Socio B: María Gómez (10% acciones)</div>
+        <p>Juan Pérez López es curiosamente… el actual Director General de tu empresa (TechCorp).</p>`,
+      question: '¿Qué figura jurídica o contable se acaba de materializar?',
+      options: [
+        { text: 'Abuso de confianza por uso de información privilegiada.', correct: false, reason: 'Incorrecto. No es solo uso de información, hay un desvío directo de recursos.' },
+        { text: 'Conflicto de interés y posible fraude corporativo (autocontratación).', correct: true, reason: '¡Bingo! El Director General está aprobando pagos millonarios a su propia empresa externa.' },
+        { text: 'Evasión fiscal exclusiva de la empresa Alfa S.A.', correct: false, reason: 'Incompleto. El problema principal es el desvío interno, no solo el tema fiscal.' }
+      ],
+      nodeLabel: 'Contratos'
+    },
+    {
+      id: 3,
+      title: 'Anexo C: Estado de cuenta offshore',
+      subtitle: 'Ref: Bank of Cayman | Transferencias Int.',
+      content: `<p>El juez aprueba levantar el secreto bancario de "Consultoría Alfa S.A."</p>
+        <p>Descubres que los $120,000 mensuales depositados por TechCorp no se quedan en México. A las 24 horas, el 95% de los fondos son transferidos a una cuenta en las Islas Caimán bajo el concepto de:</p>
+        <p class="flag">"PAGO DERECHOS PROPIEDAD INTELECTUAL"</p>
+        <p>La empresa en Caimán es una entidad offshore sin empleados.</p>`,
+      question: '¿Qué delito penal se configura al enviar el dinero ilícito al extranjero para ocultar su origen?',
+      options: [
+        { text: 'Robo equiparado y asociación delictuosa.', correct: false, reason: 'Fiscalía rechaza tu argumento. Te falta el delito federal principal.' },
+        { text: 'Defraudación fiscal simple.', correct: false, reason: 'Te quedaste corto. Enviar dinero al extranjero para ocultar origen fraudulento escala el delito.' },
+        { text: 'Operaciones con recursos de procedencia ilícita (lavado de dinero).', correct: true, reason: '¡Fallo a favor! El circuito del dinero demuestra la tipificación de lavado de dinero internacional.' }
+      ],
+      nodeLabel: 'Rastreo'
+    },
+    {
+      id: 4,
+      title: 'Veredicto final',
+      subtitle: 'Resolución del Caso Ónice',
+      content: `<h3 class="win-title">¡Caso resuelto con éxito!</h3>
+        <p>Gracias a tu deconstrucción paso a paso, demostraste la ruta del fraude:</p>
+        <ol>
+          <li>Creación de empleado fantasma (Nómina).</li>
+          <li>Autocontratación fraudulenta (Derecho Mercantil).</li>
+          <li>Lavado de dinero vía paraíso fiscal (Derecho Penal y Fiscal).</li>
+        </ol>
+        <p>El Director Juan Pérez ha sido vinculado a proceso. Excelente trabajo, auditor.</p>`,
+      question: '',
+      options: [],
+      nodeLabel: 'Veredicto'
+    }
+  ];
+
+  const $ = id => document.getElementById(id);
+  const paper = $('paper'), evTitle = $('ev-title'), evSub = $('ev-sub'), evNum = $('ev-num'), evBody = $('ev-body');
+  const deduce = $('deduce'), ask = $('ask'), opts = $('opts'), restart = $('restart');
+  const nodesEl = $('nodes'), railFill = $('rail-fill'), statusEl = $('status');
+  const modal = $('modal'), sheet = $('sheet'), fbIcon = $('fb-icon'), fbTitle = $('fb-title'), fbText = $('fb-text'), nextBtn = $('next-btn');
+  const stamp = $('stamp');
+  const desktop = window.matchMedia('(min-width: 900px)');
+
+  let stage = 0;
+  let busy = false;
+
+  function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function replay(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+  function renderNodes() {
+    nodesEl.querySelectorAll('.node').forEach(n => n.remove());
+    caseData.forEach((s, i) => {
+      const n = document.createElement('div');
+      n.className = 'node' + (i < stage ? ' past' : i === stage ? ' now' : '');
+      n.innerHTML = '<div class="dot">' + (i < stage ? '✓' : i + 1) + '</div><span>' + s.nodeLabel + '</span>';
+      if (i === stage) n.setAttribute('aria-current', 'step');
+      nodesEl.appendChild(n);
+    });
+    const pct = stage / (caseData.length - 1);
+    if (desktop.matches) {
+      railFill.style.width = '';
+      railFill.style.height = 'calc((100% - 30px) * ' + pct + ')';
+    } else {
+      railFill.style.height = '';
+      railFill.style.width = (75 * pct) + '%';
+    }
+  }
+
+  function loadStage(scroll) {
+    const d = caseData[stage];
+    replay(paper, 'enter');
+    evTitle.textContent = d.title;
+    evSub.textContent = d.subtitle;
+    evNum.textContent = String(d.id).padStart(2, '0');
+    evBody.innerHTML = d.content;
+    opts.innerHTML = '';
+
+    if (d.options.length) {
+      deduce.hidden = false;
+      restart.hidden = true;
+      statusEl.textContent = 'Fase de análisis';
+      statusEl.style.color = '#eab308';
+      ask.textContent = d.question;
+      d.options.forEach((o, i) => {
+        const b = document.createElement('button');
+        b.className = 'opt';
+        b.innerHTML = '<b>' + String.fromCharCode(65 + i) + ')</b><span></span>';
+        b.querySelector('span').textContent = o.text;
+        b.addEventListener('click', () => answer(o, b));
+        opts.appendChild(b);
+      });
+    } else {
+      deduce.hidden = true;
+      restart.hidden = false;
+      statusEl.textContent = 'Caso cerrado';
+      statusEl.style.color = '#22c55e';
+      buzz([60, 60, 60, 60, 150]);
+    }
+    if (scroll) paper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function showStamp(text, ok) {
+    stamp.textContent = text;
+    stamp.className = 'stamp ' + (ok ? 'ok' : 'ko');
+    requestAnimationFrame(() => stamp.classList.add('show'));
+    setTimeout(() => stamp.classList.remove('show'), 1000);
+  }
+
+  function answer(o, btn) {
+    if (busy) return;
+    busy = true;
+    opts.querySelectorAll('button').forEach(b => b.disabled = true);
+
+    if (o.correct) {
+      btn.classList.add('ok');
+      showStamp('APROBADO', true);
+      buzz([30, 40, 30]);
+      setTimeout(() => feedback(true, '¡Vínculo confirmado!', o.reason, () => { stage++; }), 1000);
+    } else {
+      btn.classList.add('ko');
+      replay(paper, 'shake');
+      showStamp('OBJECIÓN', false);
+      buzz([120, 60, 120]);
+      setTimeout(() => {
+        paper.classList.remove('shake');
+        feedback(false, '¡Auditoría estancada!', o.reason + ' Retrocedes en la investigación.', () => { if (stage > 0) stage--; });
+      }, 1200);
+    }
+  }
+
+  function feedback(ok, title, text, after) {
+    fbIcon.textContent = ok ? '🪜 +1' : '🐍 −1';
+    fbIcon.className = 'fb-icon ' + (ok ? 'ok' : 'ko');
+    fbTitle.textContent = title;
+    fbTitle.className = 'fb-title ' + (ok ? 'ok' : 'ko');
+    fbText.textContent = text;
+    modal.classList.add('open');
+    replay(sheet, 'sheet');
+    nextBtn.focus({ preventScroll: true });
+    nextBtn.onclick = () => {
+      modal.classList.remove('open');
+      busy = false;
+      after();
+      renderNodes();
+      loadStage(true);
+    };
+  }
+
+  restart.addEventListener('click', () => {
+    stage = 0;
+    renderNodes();
+    loadStage(true);
+  });
+
+  desktop.addEventListener('change', renderNodes);
+
+  renderNodes();
+  loadStage(false);
+</script>
+</body>
+</html>

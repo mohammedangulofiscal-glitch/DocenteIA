@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fef08a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="Memorama de la Revolución Mexicana para primaria: encuentra los pares y descubre la historia.">
+<meta property="og:title" content="¡Memoria Revolucionaria!">
+<meta property="og:description" content="Memorama de la Revolución Mexicana para jugar en clase desde el celular.">
+<title>¡Memoria Revolucionaria!</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤠</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1f2937;
+    --yellow: #fef08a;
+    --yellow-dot: #fde047;
+    --red: #ef4444;
+    --red-dark: #dc2626;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --green-soft: #dcfce7;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+    color: var(--ink);
+    background-color: var(--yellow);
+    background-image: radial-gradient(var(--yellow-dot) 2px, transparent 2px);
+    background-size: 26px 26px;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    overscroll-behavior: none;
+  }
+  .app {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: calc(var(--safe-t) + 14px) calc(var(--safe-r) + 14px) calc(var(--safe-b) + 14px) calc(var(--safe-l) + 14px);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .comic {
+    font-family: 'Bangers', Impact, sans-serif;
+    letter-spacing: 1.5px;
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  }
+  header { text-align: center; flex: none; }
+  h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(2.1rem, 10vw, 3.6rem);
+    line-height: .95;
+    font-weight: 400;
+  }
+  .tagline {
+    display: inline-block;
+    margin: 8px 0 0;
+    padding: 4px 14px;
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: 999px;
+    box-shadow: 3px 3px 0 #000;
+    font-weight: 700;
+    font-size: .95rem;
+  }
+  .stats {
+    flex: none;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: stretch;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 2px solid #000;
+    border-radius: 10px;
+    box-shadow: 3px 3px 0 #000;
+    font-weight: 700;
+    font-size: .95rem;
+    white-space: nowrap;
+  }
+  .stat b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+  .stat.pairs { background: #dbeafe; }
+  .stat.moves { background: #dcfce7; }
+  .stat.time { background: #fce7f3; }
+  .icon-btn {
+    width: 44px;
+    border: 2px solid #000;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 3px 3px 0 #000;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+  .icon-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+
+  main { flex: 1; min-height: 0; display: flex; justify-content: center; }
+  .board {
+    width: 100%;
+    height: 100%;
+    max-width: 520px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: clamp(8px, 2.4vw, 14px);
+  }
+  @media (min-aspect-ratio: 1/1) {
+    .board { max-width: 760px; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); }
+  }
+
+  .card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    perspective: 900px;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+  .card:focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; border-radius: 14px; }
+  .inner {
+    position: absolute;
+    inset: 0;
+    transition: transform .55s cubic-bezier(.4, 0, .2, 1);
+    transform-style: preserve-3d;
+  }
+  .card.flipped .inner { transform: rotateY(180deg); }
+  .face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 3px 3px 0 var(--ink);
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .back {
+    background-color: var(--red);
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, var(--red-dark) 10px, var(--red-dark) 20px);
+  }
+  .back span { font-family: 'Bangers', Impact, sans-serif; color: #fff; opacity: .6; font-size: clamp(2rem, 8vmin, 3rem); }
+  .front { background: #fff; transform: rotateY(180deg); padding: 4px; }
+  .card.matched .front { background: var(--green-soft); }
+  .emoji { font-size: clamp(2.1rem, 9vmin, 3.8rem); line-height: 1.1; }
+  .name {
+    margin-top: 4px;
+    width: 100%;
+    font-weight: 700;
+    font-size: clamp(.72rem, 3vw, .95rem);
+    text-align: center;
+    line-height: 1.1;
+  }
+  .card.nope .inner { animation: nope .35s ease; }
+  @keyframes nope { 25% { translate: -4px 0; } 75% { translate: 4px 0; } }
+
+  /* Modal */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--safe-t) + 16px) calc(var(--safe-r) + 16px) calc(var(--safe-b) + 16px) calc(var(--safe-l) + 16px);
+    background: rgba(0, 0, 0, .6);
+  }
+  .overlay.open { display: flex; }
+  .sheet {
+    width: 100%;
+    max-width: 440px;
+    max-height: 100%;
+    overflow-y: auto;
+    background: #fde047;
+    border: 5px solid #000;
+    border-radius: 24px;
+    box-shadow: 7px 7px 0 #000;
+    text-align: center;
+    animation: popIn .4s ease-out both;
+  }
+  @keyframes popIn {
+    0% { transform: scale(.8); opacity: 0; }
+    80% { transform: scale(1.04); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .sheet h2 {
+    margin: 0;
+    padding: 8px 12px;
+    background: var(--red);
+    border-bottom: 4px solid #000;
+    color: #fff;
+    font-size: clamp(1.9rem, 9vw, 2.6rem);
+    font-weight: 400;
+  }
+  .sheet-body { padding: 18px 18px 22px; display: flex; flex-direction: column; align-items: center; }
+  .big-emoji { font-size: 5rem; line-height: 1; margin: 4px 0 18px; }
+  .bubble {
+    position: relative;
+    width: 100%;
+    margin-bottom: 26px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 4px solid #000;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    line-height: 1.4;
+  }
+  .bubble::after, .bubble::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    border-style: solid;
+    border-color: transparent;
+  }
+  .bubble::after { margin-left: -18px; border-width: 18px 18px 0; border-top-color: #000; }
+  .bubble::before { margin-left: -12px; margin-top: -1px; border-width: 13px 12px 0; border-top-color: #fff; z-index: 1; }
+  .bubble .q { display: block; margin-bottom: 6px; color: #2563eb; font-size: 1.6rem; text-shadow: none; }
+  .bubble p { margin: 0; }
+  .btn-comic {
+    min-height: 52px;
+    padding: 6px 28px;
+    border: 4px solid #000;
+    border-radius: 999px;
+    background: var(--blue);
+    color: #fff;
+    font-family: 'Bangers', Impact, sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 #000;
+  }
+  .btn-comic.win { background: var(--purple); }
+  .btn-comic:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 #000; }
+  .btn-comic:focus-visible { outline: 4px solid #fff; outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .inner { transition-duration: .01s; }
+    .sheet, .card.nope .inner { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 class="comic">¡Memoria<br>Revolucionaria!</h1>
+    <p class="tagline">Encuentra los pares y descubre la historia</p>
+  </header>
+
+  <div class="stats" aria-live="polite">
+    <div class="stat pairs">Pares <b><span id="score">0</span>/6</b></div>
+    <div class="stat moves">Jugadas <b id="moves">0</b></div>
+    <div class="stat time">⏱ <b id="time">0:00</b></div>
+    <button class="icon-btn" id="restart-top" aria-label="Reiniciar juego">🔄</button>
+  </div>
+
+  <main>
+    <div id="game-board" class="board" aria-label="Tablero de memorama"></div>
+  </main>
+</div>
+
+<div id="modal" class="overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="sheet" id="sheet">
+    <h2 id="modal-title" class="comic"></h2>
+    <div class="sheet-body">
+      <div class="big-emoji" id="modal-emoji"></div>
+      <div class="bubble">
+        <span class="q comic" id="modal-kicker">¿Sabías que…? 🤔</span>
+        <p id="modal-text"></p>
+      </div>
+      <button class="btn-comic" id="modal-btn">¡Entendido!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const cardsData = [
+    { id: 'madero', emoji: '🧑🏻‍💼', name: 'Madero', fact: 'Francisco I. Madero inició la fiesta en 1910 al decir "¡Sufragio efectivo, no reelección!" para que Porfirio Díaz ya no se quedara en el poder.' },
+    { id: 'zapata', emoji: '🤠', name: 'Zapata', fact: 'Emiliano Zapata luchó por la tierra y quería que las parcelas fueran de los campesinos que las trabajaban. ¡Su lema era "Tierra y Libertad"!' },
+    { id: 'villa', emoji: '🐎', name: 'Pancho Villa', fact: 'Pancho Villa era como un superhéroe del norte que lideraba un ejército gigante llamado la División del Norte. ¡Incluso tenía un tren blindado!' },
+    { id: 'adelita', emoji: '🦸🏽‍♀️', name: 'Las Adelitas', fact: 'Las Adelitas eran valientes mujeres soldado que no solo cocinaban, sino que también curaban heridos y luchaban en las batallas con mucho valor.' },
+    { id: 'tren', emoji: '🚂', name: 'El Tren', fact: 'Los trenes fueron súper importantes en esa época, ya que los revolucionarios los usaban para viajar rápido por todo México y ganar batallas. ¡Chu, chuuu!' },
+    { id: 'constitucion', emoji: '📜', name: 'Constitución', fact: 'En 1917, después de mucha lucha, se firmó la Constitución que nos dio los derechos importantes que aún tenemos hoy. ¡Fue el gran premio de la Revolución!' }
+  ];
+  const TOTAL = cardsData.length;
+
+  const board = document.getElementById('game-board');
+  const scoreEl = document.getElementById('score');
+  const movesEl = document.getElementById('moves');
+  const timeEl = document.getElementById('time');
+  const modal = document.getElementById('modal');
+  const sheet = document.getElementById('sheet');
+  const modalTitle = document.getElementById('modal-title');
+  const modalEmoji = document.getElementById('modal-emoji');
+  const modalKicker = document.getElementById('modal-kicker');
+  const modalText = document.getElementById('modal-text');
+  const modalBtn = document.getElementById('modal-btn');
+
+  let first = null, second = null, lock = false;
+  let pairs = 0, moves = 0;
+  let startedAt = 0, timerId = null, elapsed = 0;
+  let modalMode = 'fact';
+
+  function buzz(pattern) {
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+  }
+  function fmt(ms) {
+    const s = Math.floor(ms / 1000);
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+  function startTimer() {
+    startedAt = Date.now();
+    timerId = setInterval(() => { elapsed = Date.now() - startedAt; timeEl.textContent = fmt(elapsed); }, 250);
+  }
+  function stopTimer() {
+    clearInterval(timerId);
+    timerId = null;
+    if (startedAt) elapsed = Date.now() - startedAt;
+    timeEl.textContent = fmt(elapsed);
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function initGame() {
+    stopTimer();
+    first = second = null;
+    lock = false;
+    pairs = moves = 0;
+    startedAt = 0;
+    elapsed = 0;
+    scoreEl.textContent = '0';
+    movesEl.textContent = '0';
+    timeEl.textContent = '0:00';
+
+    board.innerHTML = '';
+    shuffle([...cardsData, ...cardsData]).forEach(card => {
+      const btn = document.createElement('button');
+      btn.className = 'card';
+      btn.dataset.id = card.id;
+      btn.setAttribute('aria-label', 'Carta boca abajo');
+      btn.innerHTML =
+        '<span class="inner">' +
+          '<span class="face back"><span>?</span></span>' +
+          '<span class="face front"><span class="emoji">' + card.emoji + '</span><span class="name">' + card.name + '</span></span>' +
+        '</span>';
+      btn.addEventListener('click', () => flip(btn, card));
+      board.appendChild(btn);
+    });
+  }
+
+  function flip(el, card) {
+    if (lock || el === first || el.classList.contains('flipped')) return;
+    if (!timerId && pairs < TOTAL) startTimer();
+
+    el.classList.add('flipped');
+    el.setAttribute('aria-label', card.name);
+    buzz(8);
+
+    if (!first) { first = el; return; }
+
+    second = el;
+    moves++;
+    movesEl.textContent = moves;
+    checkMatch();
+  }
+
+  function checkMatch() {
+    lock = true;
+    if (first.dataset.id === second.dataset.id) {
+      const data = cardsData.find(c => c.id === first.dataset.id);
+      first.classList.add('matched');
+      second.classList.add('matched');
+      first.disabled = second.disabled = true;
+      first = second = null;
+      pairs++;
+      scoreEl.textContent = pairs;
+      buzz([30, 40, 30]);
+      if (pairs === TOTAL) stopTimer();
+      setTimeout(() => showFact(data), 600);
+    } else {
+      const a = first, b = second;
+      buzz(60);
+      setTimeout(() => { a.classList.add('nope'); b.classList.add('nope'); }, 450);
+      setTimeout(() => {
+        [a, b].forEach(c => {
+          c.classList.remove('flipped', 'nope');
+          c.setAttribute('aria-label', 'Carta boca abajo');
+        });
+        first = second = null;
+        lock = false;
+      }, 1000);
+    }
+  }
+
+  function openModal() {
+    modal.classList.add('open');
+    sheet.style.animation = 'none';
+    void sheet.offsetWidth;
+    sheet.style.animation = '';
+    modalBtn.focus({ preventScroll: true });
+  }
+
+  function showFact(data) {
+    modalMode = 'fact';
+    modalTitle.textContent = data.name;
+    modalEmoji.textContent = data.emoji;
+    modalKicker.textContent = '¿Sabías que…? 🤔';
+    modalText.textContent = data.fact;
+    modalBtn.textContent = '¡Entendido!';
+    modalBtn.classList.remove('win');
+    openModal();
+  }
+
+  function showWin() {
+    modalMode = 'win';
+    modalTitle.textContent = '¡Lo lograste!';
+    modalEmoji.textContent = '🏆';
+    modalKicker.textContent = '¡Viva la memoria! 🎉';
+    modalText.textContent = 'Encontraste los ' + TOTAL + ' pares en ' + moves + ' jugadas y ' + fmt(elapsed) + '.';
+    modalBtn.textContent = '¡Jugar de nuevo!';
+    modalBtn.classList.add('win');
+    buzz([60, 60, 60, 60, 120]);
+    openModal();
+  }
+
+  modalBtn.addEventListener('click', () => {
+    modal.classList.remove('open');
+    if (modalMode === 'win') { initGame(); return; }
+    lock = false;
+    if (pairs === TOTAL) setTimeout(showWin, 250);
+  });
+
+  document.getElementById('restart-top').addEventListener('click', () => {
+    modal.classList.remove('open');
+    initGame();
+  });
+
+  initGame();
+</script>
+</body>
+</html>
